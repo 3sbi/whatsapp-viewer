@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bufio"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -88,7 +89,14 @@ func parseChat(chatFile, baseDir, staticRoot string) ([]Message, error) {
 		for _, w := range words {
 			lw := strings.ToLower(w)
 			if strings.HasSuffix(lw, ".jpg") || strings.HasSuffix(lw, ".jpeg") || strings.HasSuffix(lw, ".png") {
-				candidate := filepath.Join(baseDir, w)
+				cleanName := strings.TrimSpace(strings.Map(func(r rune) rune {
+					if r == '\u200E' || r == '\u200F' || r == '\uFEFF' {
+						return -1 // remove invisible marks
+					}
+					return r
+				}, w))
+				candidate := filepath.Join(baseDir, cleanName)
+				log.Default().Print(os.Stat(candidate))
 				if _, err := os.Stat(candidate); err == nil {
 					rel, err := filepath.Rel(staticRoot, candidate)
 					if err == nil {

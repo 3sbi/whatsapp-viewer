@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -29,6 +30,21 @@ func main() {
 	}
 
 	e.Static("/static", baseTmp)
+
+	// Background clean up for old temp directories so that /tmp folder won't grow over time
+	go func() {
+		for {
+			time.Sleep(10 * time.Minute)
+			entries, _ := os.ReadDir(baseTmp)
+			for _, entry := range entries {
+				path := filepath.Join(baseTmp, entry.Name())
+				info, err := os.Stat(path)
+				if err == nil && info.IsDir() && time.Since(info.ModTime()) > 10*time.Minute {
+					os.RemoveAll(path)
+				}
+			}
+		}
+	}()
 
 	uploadTemplate, err := template.ParseFiles("templates/upload.html")
 	if err != nil {
