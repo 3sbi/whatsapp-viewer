@@ -101,5 +101,5 @@ func main() {
 		return chatTemplate.Execute(c.Response(), messages)
 	})
 
-	e.Logger.Fatal(e.Start(":3000"))
+	e.Logger.Fatal(e.Start(":80"))
 }

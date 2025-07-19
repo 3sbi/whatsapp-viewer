@@ -11,5 +11,5 @@ WORKDIR /app
 COPY --from=builder /app/whatsapp-viewer .
 COPY templates ./templates
 RUN mkdir tmp
-EXPOSE 3000
+EXPOSE 80
 CMD ["./whatsapp-viewer"]
