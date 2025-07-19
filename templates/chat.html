@@ -1,0 +1,72 @@
+<html>
+
+<head>
+    <title>Chat Log</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #ece5dd;
+            padding: 20px;
+        }
+
+        .chat-container {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 75%;
+            clear: both;
+            word-wrap: break-word;
+        }
+
+        .user1 {
+            background: #dcf8c6;
+            float: right;
+            text-align: right;
+        }
+
+        .user2 {
+            background: #fff;
+            float: left;
+            text-align: left;
+        }
+
+        .timestamp {
+            font-size: 0.7em;
+            color: gray;
+            display: block;
+            margin-top: 5px;
+        }
+
+        img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-container">
+        {{range .}}
+        <div class="message {{if .IsUser1}}user1{{else}}user2{{end}} clearfix">
+            <strong>{{.Sender}}</strong><br>
+            {{.Text}}<br>
+            {{if .ImagePath}}<img src="/static/{{.ImagePath}}" alt="image"><br>{{end}}
+            <span class="timestamp">{{.Timestamp}}</span>
+        </div>
+        {{end}}
+    </div>
+</body>
+
+</html>
