@@ -1,79 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>WhatsApp Chat Viewer</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #ece5dd;
-            margin: 0;
-            padding: 0;
-        }
-
-        .chat-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .message {
-            margin: 10px 0;
-            padding: 10px 15px;
-            border-radius: 10px;
-            max-width: 70%;
-            clear: both;
-            word-wrap: break-word;
-        }
-
-        .user1 {
-            background-color: #dcf8c6; /* WhatsApp green */
-            float: left;
-        }
-
-        .user2 {
-            background-color: #ffffff;
-            float: right;
-        }
-
-        .sender {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .timestamp {
-            display: block;
-            font-size: 0.75em;
-            color: #777;
-            margin-top: 5px;
-        }
-
-        .message img {
-            display: block;
-            margin-top: 8px;
-            max-width: 100%;
-            border-radius: 8px;
-        }
-
-        .clearfix::after {
-            content: "";
-            display: table;
-            clear: both;
-        }
-    </style>
-</head>
-<body>
-    <div class="chat-container">
-        {{range .}}
-        <div class="message {{if .IsUser1}}user1{{else}}user2{{end}} clearfix">
-            <div class="sender">{{.Sender}}</div>
-            <div class="text">{{.Text}}</div>
-            {{if .ImagePath}}
-            <img src="/static/{{.ImagePath}}" alt="Image">
-            {{end}}
-            <span class="timestamp">{{.Timestamp}}</span>
-        </div>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <link rel="icon" type="image/svg" href="/assets/icon.svg" />
+    <link
+      rel="preload"
+      href="/assets/Geist-Regular.woff2"
+      as="font"
+      crossorigin="anonymous"
+      type="font/woff2"
+    />
+  </head>
+  <body>
+    <div class="chat">
+      {{range .}}
+      <div class="message {{if .IsUser1}}user1{{else}}user2{{end}} clearfix">
+        <div class="sender">{{.Sender}}</div>
+        <div class="text">{{.Text}}</div>
+        {{if .ImagePath}}
+        <img src="/static/{{.ImagePath}}" alt="Image" />
         {{end}}
+        <span class="timestamp">{{.Timestamp}}</span>
+      </div>
+      {{end}}
     </div>
-</body>
+  </body>
 </html>

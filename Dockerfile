@@ -10,6 +10,7 @@ FROM alpine:latest AS deploy
 WORKDIR /app
 COPY --from=builder /app/whatsapp-viewer .
 COPY templates ./templates
+COPY assets ./assets
 RUN mkdir tmp
 EXPOSE 80
 CMD ["./whatsapp-viewer"]

@@ -29,6 +29,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	e.Static("/assets", "assets") 
 	e.Static("/static", baseTmp)
 
 	// Background clean up for old temp directories so that /tmp folder won't grow over time
