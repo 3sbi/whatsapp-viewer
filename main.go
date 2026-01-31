@@ -192,7 +192,7 @@ func main() {
 	defer stop()
 
 	go func() {
-		if err := e.Start(":5556"); err != nil && err != http.ErrServerClosed {
+		if err := e.Start(":80"); err != nil && err != http.ErrServerClosed {
 			e.Logger.Fatal(err)
 		}
 	}()

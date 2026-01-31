@@ -1,4 +1,4 @@
-# WhatsApp chat viewer
+# WhatsApp Chat Viewer
 
 A minimal web app to view exported WhatsApp chats with images, displayed in a WhatsApp-like UI.
 
