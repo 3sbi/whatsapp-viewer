@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -32,24 +31,6 @@ type ChatSession struct {
 }
 
 var sessionStore = NewSessionStore()
-
-func getContentType(filename string) string {
-	ext := strings.ToLower(filepath.Ext(filename))
-	switch ext {
-	case ".png":
-		return "image/png"
-	case ".gif":
-		return "image/gif"
-	case ".webp":
-		return "image/webp"
-	case ".bmp":
-		return "image/bmp"
-	case ".jpg", ".jpeg":
-		return "image/jpeg"
-	default:
-		return "image/jpeg" // fallback
-	}
-}
 
 func generateSessionID() string {
 	bytes := make([]byte, 16)
@@ -197,7 +178,8 @@ func main() {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		contentType := getContentType(imagePath)
+		// Detect actual content type from file
+		contentType := http.DetectContentType(imageData[:512])
 		return c.Blob(http.StatusOK, contentType, imageData)
 	})
 
