@@ -66,5 +66,43 @@
         </div>
       </div>
     </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="modal" onclick="closeModal()">
+      <div class="modal-content">
+        <img id="modalImage" src="" alt="Zoomed image" />
+      </div>
+    </div>
+
+    <script>
+      function openModal(imageSrc) {
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        modal.style.display = 'flex';
+        modalImg.src = imageSrc;
+      }
+
+      function closeModal() {
+        document.getElementById('imageModal').style.display = 'none';
+      }
+
+      // Add click handlers to all message images
+      document.addEventListener('DOMContentLoaded', function() {
+        const messageImages = document.querySelectorAll('.message-media img');
+        messageImages.forEach(img => {
+          img.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openModal(this.src);
+          });
+        });
+      });
+
+      // Close modal on Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closeModal();
+        }
+      });
+    </script>
   </body>
 </html>
