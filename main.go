@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"html/template"
@@ -8,7 +9,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -91,12 +94,14 @@ func main() {
 
 		sessionID := getSessionID(c)
 
-		// Create temporary directory for processing only
+		// create temporary directory for processing files before deleting them
 		tmpDir, err := os.MkdirTemp(baseTmp, "chat")
 		if err != nil {
 			return err
 		}
-		defer os.RemoveAll(tmpDir) // Clean up immediately after processing
+		
+		// Clean up IMMEDIATELY after processing and loading it into RAM
+		defer os.RemoveAll(tmpDir) 
 
 		zipPath := filepath.Join(tmpDir, file.Filename)
 		src, err := file.Open()
@@ -125,14 +130,14 @@ func main() {
 			return err
 		}
 
-		// Store session data
+		// store session data
 		session := &ChatSession{
 			Messages:  messages,
 			ImageData: make(map[string][]byte),
 			CreatedAt: time.Now(),
 		}
 
-		// Load image data into memory
+		// loading images into memory to not store them on the disk for too long
 		for _, msg := range messages {
 			if msg.ImagePath != "" {
 				imagePath := filepath.Join(tmpDir, filepath.Base(msg.ImagePath))
@@ -142,7 +147,7 @@ func main() {
 			}
 		}
 
-		// Compute session size once
+		// compute session size once to check if there is enough memory later
 		var size int64
 		for _, img := range session.ImageData {
 			size += int64(len(img))
@@ -178,10 +183,25 @@ func main() {
 			return c.NoContent(http.StatusNotFound)
 		}
 
-		// Detect actual content type from file
 		contentType := http.DetectContentType(imageData[:512])
 		return c.Blob(http.StatusOK, contentType, imageData)
 	})
 
-	e.Logger.Fatal(e.Start(":5556"))
+	// Graceful shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		if err := e.Start(":5556"); err != nil && err != http.ErrServerClosed {
+			e.Logger.Fatal(err)
+		}
+	}()
+
+	<-ctx.Done()
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := e.Shutdown(shutdownCtx); err != nil {
+		e.Logger.Fatal(err)
+	}
 }
