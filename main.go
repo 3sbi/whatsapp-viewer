@@ -1,11 +1,15 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"html/template"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -20,6 +24,55 @@ type Message struct {
 	IsUser1   bool
 }
 
+type ChatSession struct {
+	Messages  []Message
+	ImageData map[string][]byte
+	CreatedAt time.Time
+	SizeBytes int64
+}
+
+var sessionStore = NewSessionStore()
+
+func getContentType(filename string) string {
+	ext := strings.ToLower(filepath.Ext(filename))
+	switch ext {
+	case ".png":
+		return "image/png"
+	case ".gif":
+		return "image/gif"
+	case ".webp":
+		return "image/webp"
+	case ".bmp":
+		return "image/bmp"
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	default:
+		return "image/jpeg" // fallback
+	}
+}
+
+func generateSessionID() string {
+	bytes := make([]byte, 16)
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
+}
+
+func getSessionID(c echo.Context) string {
+	cookie, err := c.Cookie("session_id")
+	if err != nil || cookie.Value == "" {
+		sessionID := generateSessionID()
+		c.SetCookie(&http.Cookie{
+			Name:     "session_id",
+			Value:    sessionID,
+			Path:     "/",
+			MaxAge:   3600, // 1 hour
+			HttpOnly: true,
+		})
+		return sessionID
+	}
+	return cookie.Value
+}
+
 func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
@@ -29,21 +82,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	e.Static("/assets", "assets") 
-	e.Static("/static", baseTmp)
+	e.Static("/assets", "assets")
 
-	// Background clean up for old temp directories so that /tmp folder won't grow over time
+	// Session cleanup
 	go func() {
 		for {
-			time.Sleep(10 * time.Minute)
-			entries, _ := os.ReadDir(baseTmp)
-			for _, entry := range entries {
-				path := filepath.Join(baseTmp, entry.Name())
-				info, err := os.Stat(path)
-				if err == nil && info.IsDir() && time.Since(info.ModTime()) > 10*time.Minute {
-					os.RemoveAll(path)
-				}
-			}
+			time.Sleep(15 * time.Minute)
+			// Remove old sessions (older than 1 hour)
+			sessionStore.RemoveOldSessions()
 		}
 	}()
 
@@ -62,10 +108,14 @@ func main() {
 			return err
 		}
 
+		sessionID := getSessionID(c)
+
+		// Create temporary directory for processing only
 		tmpDir, err := os.MkdirTemp(baseTmp, "chat")
 		if err != nil {
 			return err
 		}
+		defer os.RemoveAll(tmpDir) // Clean up immediately after processing
 
 		zipPath := filepath.Join(tmpDir, file.Filename)
 		src, err := file.Open()
@@ -89,10 +139,39 @@ func main() {
 			return err
 		}
 
-		messages, err := parseChat(chatFile, tmpDir, baseTmp)
+		messages, err := parseChat(chatFile, tmpDir, tmpDir)
 		if err != nil {
 			return err
 		}
+
+		// Store session data
+		session := &ChatSession{
+			Messages:  messages,
+			ImageData: make(map[string][]byte),
+			CreatedAt: time.Now(),
+		}
+
+		// Load image data into memory
+		for _, msg := range messages {
+			if msg.ImagePath != "" {
+				imagePath := filepath.Join(tmpDir, filepath.Base(msg.ImagePath))
+				if data, err := os.ReadFile(imagePath); err == nil {
+					session.ImageData[msg.ImagePath] = data
+				}
+			}
+		}
+
+		// Compute session size once
+		var size int64
+		for _, img := range session.ImageData {
+			size += int64(len(img))
+		}
+		session.SizeBytes = size
+
+		sessionStore.Set(sessionID, session)
+
+		// Check memory usage after storing new session
+		sessionStore.Cleanup()
 
 		chatTemplate, err := template.ParseFiles("templates/chat.html")
 		if err != nil {
@@ -100,6 +179,26 @@ func main() {
 		}
 
 		return chatTemplate.Execute(c.Response(), messages)
+	})
+
+	// Serve images from session data
+	e.GET("/static/:imagePath", func(c echo.Context) error {
+		sessionID := getSessionID(c)
+		imagePath := c.Param("imagePath")
+
+		session, exists := sessionStore.Get(sessionID)
+
+		if !exists {
+			return c.NoContent(http.StatusNotFound)
+		}
+
+		imageData, exists := session.ImageData[imagePath]
+		if !exists {
+			return c.NoContent(http.StatusNotFound)
+		}
+
+		contentType := getContentType(imagePath)
+		return c.Blob(http.StatusOK, contentType, imageData)
 	})
 
 	e.Logger.Fatal(e.Start(":5556"))

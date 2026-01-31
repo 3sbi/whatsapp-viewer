@@ -3,10 +3,12 @@ package main
 import (
 	"archive/zip"
 	"bufio"
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -20,6 +22,11 @@ func extractZip(src, dest string) (string, error) {
 	var chatFile string
 	for _, f := range r.File {
 		fpath := filepath.Join(dest, f.Name)
+
+		if !strings.HasPrefix(fpath, filepath.Clean(dest)+string(os.PathSeparator)) {
+			return "", fmt.Errorf("illegal file path: %s", f.Name)
+		}
+
 		if f.FileInfo().IsDir() {
 			os.MkdirAll(fpath, os.ModePerm)
 			continue
@@ -55,6 +62,8 @@ func extractZip(src, dest string) (string, error) {
 	return chatFile, nil
 }
 
+var imageRegex = regexp.MustCompile(`(?i)[\w\-.]+\.(jpg|jpeg|png|gif|webp)`)
+
 func parseChat(chatFile, baseDir, staticRoot string) ([]Message, error) {
 	file, err := os.Open(chatFile)
 	if err != nil {
@@ -66,6 +75,7 @@ func parseChat(chatFile, baseDir, staticRoot string) ([]Message, error) {
 	var user1 string
 
 	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 1024), 1024*1024) // 1MB lines
 	for scanner.Scan() {
 		line := scanner.Text()
 		parts := strings.SplitN(line, " - ", 2)
@@ -89,25 +99,21 @@ func parseChat(chatFile, baseDir, staticRoot string) ([]Message, error) {
 		}
 
 		var imagePath string
-		words := strings.Fields(text)
-		for _, w := range words {
-			lw := strings.ToLower(w)
-			if strings.HasSuffix(lw, ".jpg") || strings.HasSuffix(lw, ".jpeg") || strings.HasSuffix(lw, ".png") {
-				cleanName := strings.TrimSpace(strings.Map(func(r rune) rune {
-					if r == '\u200E' || r == '\u200F' || r == '\uFEFF' {
-						return -1 // remove invisible marks
-					}
-					return r
-				}, w))
-				candidate := filepath.Join(baseDir, cleanName)
-				log.Default().Print(os.Stat(candidate))
-				if _, err := os.Stat(candidate); err == nil {
-					rel, err := filepath.Rel(staticRoot, candidate)
-					if err == nil {
-						imagePath = rel
-					}
+		match := imageRegex.FindString(text)
+		if match != "" {
+			cleanName := strings.TrimSpace(strings.Map(func(r rune) rune {
+				if r == '\u200E' || r == '\u200F' || r == '\uFEFF' {
+					return -1 // remove invisible marks
 				}
-				break
+				return r
+			}, match))
+			candidate := filepath.Join(baseDir, cleanName)
+			log.Default().Print(os.Stat(candidate))
+			if _, err := os.Stat(candidate); err == nil {
+				rel, err := filepath.Rel(staticRoot, candidate)
+				if err == nil {
+					imagePath = rel
+				}
 			}
 		}
 
