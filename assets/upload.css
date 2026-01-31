@@ -55,10 +55,6 @@
   color: var(--secondary);
 }
 
-.upload-form {
-  margin-bottom: 16px;
-}
-
 .file-input-wrapper {
   position: relative;
   margin-bottom: 20px;
@@ -149,6 +145,76 @@ h1 {
   font-style: italic;
 }
 
+.upload-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.file-info {
+  margin-bottom: 20px;
+}
+
+.file-details {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  gap: 12px;
+  position: relative;
+}
+
+.file-icon-large {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.file-meta {
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+}
+
+.file-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 2px;
+}
+
+.file-size {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.file-remove {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.file-remove:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
 @media (max-width: 480px) {
   .upload-container {
     margin: 0;
@@ -162,5 +228,28 @@ h1 {
   .instructions {
     font-size: 0.8rem;
     line-height: 1.4;
+  }
+
+  .file-details {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .file-icon-large {
+    font-size: 1.5rem;
+  }
+
+  .file-name {
+    font-size: 0.9rem;
+  }
+
+  .file-size {
+    font-size: 0.75rem;
+  }
+
+  .file-remove {
+    width: 24px;
+    height: 24px;
+    font-size: 1rem;
   }
 }
