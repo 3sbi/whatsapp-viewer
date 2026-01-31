@@ -80,6 +80,10 @@ func parseChat(chatFile, baseDir, staticRoot string) ([]Message, error) {
 		sender := msgParts[0]
 		text := msgParts[1]
 
+		if text == "" || text == "null" {
+			continue
+		}
+
 		if user1 == "" {
 			user1 = sender
 		}
