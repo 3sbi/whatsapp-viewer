@@ -1,36 +1,67 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>WhatsApp Chat Viewer</title>
-    <link rel="stylesheet" href="/assets/styles.css" />
+    <meta
+      name="description"
+      content="View your WhatsApp chat history in a web interface"
+    />
+    <link rel="stylesheet" href="/assets/global.css" />
+    <link rel="stylesheet" href="/assets/upload.css" />
     <link rel="icon" type="image/svg" href="/assets/icon.svg" />
   </head>
   <body>
     <div class="upload-container">
       <div class="upload-icon">
-        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="1.5">
+        <svg
+          width="80"
+          height="80"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#4CAF50"
+          stroke-width="1.5"
+        >
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
           <polyline points="17,8 12,3 7,8"></polyline>
           <line x1="12" y1="3" x2="12" y2="15"></line>
         </svg>
       </div>
       <h1>WhatsApp Chat Viewer</h1>
-      <p class="description">View your WhatsApp chat history in a clean, familiar interface</p>
-      
+      <p class="description">
+        View your WhatsApp chat history in a clean and familiar web interface
+      </p>
+
       <div class="upload-card">
-        <h2>📱 How to export your chat</h2>
+        <h2>📱 How to import your chat</h2>
         <ol class="instructions">
           <li>Open WhatsApp and go to the chat you want to export</li>
-          <li>Tap <strong>⋮</strong> → <strong>More</strong> → <strong>Export chat</strong></li>
-          <li>Choose <strong>Without Media</strong> or <strong>With Media</strong></li>
+          <li>
+            Tap <strong>⋮</strong> → <strong>More</strong> →
+            <strong>Export chat</strong>
+          </li>
+          <li>
+            Choose <strong>Without Media</strong> or <strong>With Media</strong>
+          </li>
           <li>Save the ZIP file to your device</li>
+          <li>Upload the saved ZIP file below to view it</li>
         </ol>
-        
-        <form action="/upload" method="post" enctype="multipart/form-data" class="upload-form">
+
+        <form
+          action="/upload"
+          method="post"
+          enctype="multipart/form-data"
+          class="upload-form"
+        >
           <div class="file-input-wrapper">
-            <input type="file" name="file" accept=".zip" required id="zipFile" />
+            <input
+              type="file"
+              name="file"
+              accept=".zip"
+              required
+              id="zipFile"
+            />
             <label for="zipFile" class="file-input-label">
               <span class="file-icon">📁</span>
               <span class="file-text">Choose ZIP file</span>
@@ -40,8 +71,6 @@
             <span>View Chat</span>
           </button>
         </form>
-        
-        <p class="note">Supported format: WhatsApp chat export (.zip)</p>
       </div>
     </div>
   </body>
