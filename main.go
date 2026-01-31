@@ -99,9 +99,9 @@ func main() {
 		if err != nil {
 			return err
 		}
-		
+
 		// Clean up IMMEDIATELY after processing and loading it into RAM
-		defer os.RemoveAll(tmpDir) 
+		defer os.RemoveAll(tmpDir)
 
 		zipPath := filepath.Join(tmpDir, file.Filename)
 		src, err := file.Open()
