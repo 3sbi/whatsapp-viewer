@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"sort"
 	"sync"
 	"time"
@@ -32,6 +31,11 @@ func (s *SessionStore) Set(id string, session *ChatSession) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.sessions[id] = session
+
+	Logger.Debug("Session stored",
+		"session_id", id,
+		"messages_count", len(session.Messages),
+		"size_bytes", session.SizeBytes)
 }
 
 func (s *SessionStore) getTotalSize() int64 {
@@ -80,15 +84,16 @@ func (s *SessionStore) Cleanup() {
 			}
 		}
 
-		log.Printf("Memory cleanup triggered. Removed %d oldest sessions (%.2fMB). Current session memory: %.2fMB",
-			removedCount, float64(removedSize)/1024/1024, float64(totalMemory)/1024/1024)
+		Logger.Info("Memory cleanup triggered",
+			"removed_sessions", removedCount,
+			"removed_size_mb", float64(removedSize)/1024/1024,
+			"current_memory_mb", float64(totalMemory)/1024/1024)
 	}
 }
 
 func (s *SessionStore) RemoveOldSessions() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-
 	for id, session := range s.sessions {
 		if time.Since(session.CreatedAt) > time.Hour {
 			delete(s.sessions, id)

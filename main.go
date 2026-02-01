@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"html/template"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,7 +14,6 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
 
 type Message struct {
@@ -58,12 +56,16 @@ func getSessionID(c echo.Context) string {
 }
 
 func main() {
+	InitLogger()
 	e := echo.New()
-	e.Use(middleware.Logger())
+	e.Use(StructuredLogger())
+
+	e.Logger.Info("Starting WhatsApp Viewer application")
 
 	baseTmp := "tmp"
 	if err := os.MkdirAll(baseTmp, os.ModePerm); err != nil {
-		log.Fatal(err)
+		e.Logger.Error("Failed to create temporary directory", "error", err, "path", baseTmp)
+		os.Exit(1)
 	}
 
 	e.Static("/assets", "assets")
@@ -79,7 +81,8 @@ func main() {
 
 	uploadTemplate, err := template.ParseFiles("templates/upload.html")
 	if err != nil {
-		log.Fatal("Error loading upload template:", err)
+		e.Logger.Error("Failed to load upload template", "error", err, "template", "upload.html")
+		os.Exit(1)
 	}
 
 	e.GET("/", func(c echo.Context) error {
@@ -89,10 +92,15 @@ func main() {
 	e.POST("/upload", func(c echo.Context) error {
 		file, err := c.FormFile("file")
 		if err != nil {
+			e.Logger.Warn("Upload request missing file", "error", err)
 			return err
 		}
 
 		sessionID := getSessionID(c)
+		e.Logger.Info("Processing file upload",
+			"session_id", sessionID,
+			"filename", file.Filename,
+			"size", file.Size)
 
 		// create temporary directory for processing files before deleting them
 		tmpDir, err := os.MkdirTemp(baseTmp, "chat")
@@ -159,6 +167,11 @@ func main() {
 		// Check memory usage after storing new session
 		sessionStore.Cleanup()
 
+		e.Logger.Info("File upload processed successfully",
+			"session_id", sessionID,
+			"messages_processed", len(messages),
+			"session_size_mb", float64(session.SizeBytes)/1024/1024)
+
 		chatTemplate, err := template.ParseFiles("templates/chat.html")
 		if err != nil {
 			return err
@@ -187,21 +200,29 @@ func main() {
 		return c.Blob(http.StatusOK, contentType, imageData)
 	})
 
-	// Graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	go func() {
-		if err := e.Start(":80"); err != nil && err != http.ErrServerClosed {
-			e.Logger.Fatal(err)
+		port := ":5556"
+		e.Logger.Info("Starting HTTP server", "port", port)
+		if err := e.Start(port); err != nil && err != http.ErrServerClosed {
+			e.Logger.Error("Failed to start server", "error", err)
+			os.Exit(1)
 		}
 	}()
 
+	// Gracefully shut down the server with a timeout of 10 seconds.
 	<-ctx.Done()
+	e.Logger.Info("Shutdown signal received, gracefully shutting down server")
+
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := e.Shutdown(shutdownCtx); err != nil {
-		e.Logger.Fatal(err)
+		e.Logger.Error("Failed to shutdown server gracefully", "error", err)
+		os.Exit(1)
 	}
+
+	e.Logger.Info("Server shutdown completed")
 }

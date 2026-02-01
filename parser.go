@@ -5,7 +5,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -13,8 +12,11 @@ import (
 )
 
 func extractZip(src, dest string) (string, error) {
+	Logger.Debug("Extracting ZIP file", "source", src, "destination", dest)
+
 	r, err := zip.OpenReader(src)
 	if err != nil {
+		Logger.Error("Failed to open ZIP file", "error", err, "source", src)
 		return "", err
 	}
 	defer r.Close()
@@ -59,14 +61,18 @@ func extractZip(src, dest string) (string, error) {
 		}
 	}
 
+	Logger.Debug("ZIP extraction completed", "chat_file", chatFile)
 	return chatFile, nil
 }
 
 var imageRegex = regexp.MustCompile(`(?i)[\w\-.]+\.(jpg|jpeg|png|gif|webp)`)
 
 func parseChat(chatFile, baseDir, staticRoot string) ([]Message, error) {
+	Logger.Debug("Parsing chat file", "file", chatFile)
+
 	file, err := os.Open(chatFile)
 	if err != nil {
+		Logger.Error("Failed to open chat file", "error", err, "file", chatFile)
 		return nil, err
 	}
 	defer file.Close()
@@ -108,7 +114,6 @@ func parseChat(chatFile, baseDir, staticRoot string) ([]Message, error) {
 				return r
 			}, match))
 			candidate := filepath.Join(baseDir, cleanName)
-			log.Default().Print(os.Stat(candidate))
 			if _, err := os.Stat(candidate); err == nil {
 				rel, err := filepath.Rel(staticRoot, candidate)
 				if err == nil {
@@ -125,6 +130,19 @@ func parseChat(chatFile, baseDir, staticRoot string) ([]Message, error) {
 			IsUser1:   sender == user1,
 		})
 	}
+
+	Logger.Info("Chat parsing completed",
+		"file", chatFile,
+		"messages_count", len(messages),
+		"images_count", func() int {
+			count := 0
+			for _, msg := range messages {
+				if msg.ImagePath != "" {
+					count++
+				}
+			}
+			return count
+		}())
 
 	return messages, scanner.Err()
 }
