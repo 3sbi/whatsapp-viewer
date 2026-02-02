@@ -36,4 +36,4 @@ make help
 
 ### Memory management
 
-The application has memory limits for safety. Max Memory: `500MB`.  Very large chat exports may hit the memory limit, consider splitting them into smaller chunks. (Max memory can configure it in `session_store.go` though)
+The application has memory limits for safety (Max Memory: `500MB`). Very large chat exports may hit the memory limit, consider splitting them into smaller chunks (Max memory can be configured in `session_store.go` though)
