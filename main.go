@@ -204,7 +204,7 @@ func main() {
 	defer stop()
 
 	go func() {
-		port := ":5556"
+		port := ":80"
 		e.Logger.Info("Starting HTTP server", "port", port)
 		if err := e.Start(port); err != nil && err != http.ErrServerClosed {
 			e.Logger.Error("Failed to start server", "error", err)
